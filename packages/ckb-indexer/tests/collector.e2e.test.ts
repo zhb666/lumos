@@ -4,7 +4,7 @@ const {
   lock,
   type,
   cellCollectorTestCases,
-  queryWithBlockHash,
+  queryWithBlockHash
 } = require("./test_cases.js");
 import { HashType, Cell } from "@ckb-lumos/base";
 import { OtherQueryOptions } from "../src/type";
@@ -20,22 +20,22 @@ test.before(() => {
   };
 });
 
-test("get count correct", async (t) => {
+test("get count correct", async t => {
   const type = {
     codeHash:
       "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
     hashType: "type" as HashType,
-    args: "0xa178db16d8228db82911fdb536df1916e761e205",
+    args: "0xa178db16d8228db82911fdb536df1916e761e205"
   };
   const cellCollector = new CellCollector(indexer, { lock: type });
-  const count = await cellCollector.count();
+  const count = await cellCollector.count({ lock: type });
   t.is(count, 1);
 });
 
-test("query cells with block hash", async (t) => {
+test("query cells with block hash", async t => {
   const otherQueryOptions: OtherQueryOptions = {
     withBlockHash: true,
-    ckbRpcUrl: nodeUri,
+    ckbRpcUrl: nodeUri
   };
   const cellCollector = new CellCollector(
     indexer,
@@ -43,7 +43,9 @@ test("query cells with block hash", async (t) => {
     otherQueryOptions
   );
   let cells: Cell[] = [];
-  for await (const cell of cellCollector.collect()) {
+  for await (const cell of cellCollector.collect(
+    queryWithBlockHash.queryOption
+  )) {
     cells.push(cell);
   }
   t.deepEqual(
@@ -53,45 +55,65 @@ test("query cells with block hash", async (t) => {
   );
 });
 
-test("query cells with different queryOptions", async (t) => {
+test("query cells with different queryOptions", async t => {
   for (const queryCase of cellCollectorTestCases) {
     const cellCollector = new CellCollector(indexer, queryCase.queryOption);
     let cells: Cell[] = [];
-    for await (const cell of cellCollector.collect()) {
+    for await (const cell of cellCollector.collect(queryCase.queryOption)) {
       cells.push(cell);
     }
     t.deepEqual(cells, queryCase.expectedResult, queryCase.desc);
   }
 });
 
-test("wrap plain Script into ScriptWrapper ", (t) => {
+test("wrap plain Script into ScriptWrapper ", t => {
   const argsLen = 20;
   const wrappedLock = { script: lock, argsLen: argsLen };
   const wrappedType = { script: type, argsLen: argsLen };
   const queryOptions = {
     lock: wrappedLock,
     type: wrappedType,
-    argsLen: argsLen,
+    argsLen: argsLen
   };
   const cellCollector = new CellCollector(indexer, queryOptions);
-  t.deepEqual(cellCollector.queries.lock, lock);
-  t.deepEqual(cellCollector.queries.type, type);
+
+  if (Array.isArray(cellCollector)) {
+    for (const queries of cellCollector) {
+      t.deepEqual(queries.lock, lock);
+      t.deepEqual(queries.type, type);
+    }
+  } else {
+    // @ts-ignore
+    t.deepEqual(cellCollector.queries.lock, lock);
+    // @ts-ignore
+    t.deepEqual(cellCollector.queries.type, type);
+  }
 });
 
-test("pass Scrip to CellCollector", (t) => {
+test("pass Scrip to CellCollector", t => {
   const argsLen = 20;
   const wrappedLock = { script: lock, argsLen: argsLen };
   const wrappedType = { script: type, argsLen: argsLen };
   const queryOptions = {
     lock: wrappedLock,
     type: wrappedType,
-    argsLen: argsLen,
+    argsLen: argsLen
   };
   const cellCollector = new CellCollector(indexer, queryOptions);
-  t.deepEqual(cellCollector.queries.lock, lock);
-  t.deepEqual(cellCollector.queries.type, type);
+
+  if (Array.isArray(cellCollector)) {
+    for (const queries of cellCollector) {
+      t.deepEqual(queries.lock, lock);
+      t.deepEqual(queries.type, type);
+    }
+  } else {
+    // @ts-ignore
+    t.deepEqual(cellCollector.queries.lock, lock);
+    // @ts-ignore
+    t.deepEqual(cellCollector.queries.type, type);
+  }
 });
-test("throw error when pass null lock and null type to CellCollector", (t) => {
+test("throw error when pass null lock and null type to CellCollector", t => {
   const error = t.throws(
     () => {
       const queryOptions = {};
@@ -102,11 +124,11 @@ test("throw error when pass null lock and null type to CellCollector", (t) => {
   t.is(error.message, "Either lock or type script must be provided!");
 });
 
-test("throw error when pass null lock and empty type to CellCollector", (t) => {
+test("throw error when pass null lock and empty type to CellCollector", t => {
   const error = t.throws(
     () => {
       const queryOptions = {
-        type: "empty" as "empty",
+        type: "empty" as "empty"
       };
       new CellCollector(indexer, queryOptions);
     },
@@ -115,12 +137,12 @@ test("throw error when pass null lock and empty type to CellCollector", (t) => {
   t.is(error.message, "Either lock or type script must be provided!");
 });
 
-test("throw error when pass wrong order to CellCollector", (t) => {
+test("throw error when pass wrong order to CellCollector", t => {
   const error = t.throws(
     () => {
       const queryOptions = {
         lock: lock,
-        order: "some" as "asc",
+        order: "some" as "asc"
       };
       new CellCollector(indexer, queryOptions);
     },
@@ -129,13 +151,13 @@ test("throw error when pass wrong order to CellCollector", (t) => {
   t.is(error.message, "Order must be either asc or desc!");
 });
 
-test("throw error when pass wrong fromBlock(toBlock) to CellCollector", (t) => {
+test("throw error when pass wrong fromBlock(toBlock) to CellCollector", t => {
   let error = t.throws(
     () => {
       const queryOptions = {
         lock: lock,
         order: "asc" as "asc",
-        fromBlock: "1000",
+        fromBlock: "1000"
       };
       new CellCollector(indexer, queryOptions);
     },
@@ -148,7 +170,7 @@ test("throw error when pass wrong fromBlock(toBlock) to CellCollector", (t) => {
       const queryOptions = {
         lock: lock,
         order: "asc" as "asc",
-        toBlock: "0x",
+        toBlock: "0x"
       };
       new CellCollector(indexer, queryOptions);
     },
