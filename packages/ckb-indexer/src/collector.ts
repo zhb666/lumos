@@ -188,6 +188,14 @@ export class CKBCellCollector implements BaseCellCollector {
       if (lastCursor) {
         searchKeyFilter.lastCursor = lastCursor;
       }
+      // TODO Can it be returned as a collection?
+      // let data = await this.terminableCellFetcher.getCells(
+      //   generateSearchKey(queries),
+      //   undefined,
+      //   searchKeyFilter
+      // );
+      // result.lastCursor = data.lastCursor
+      // result.objects.push([data.objects])
       result = await this.terminableCellFetcher.getCells(
         generateSearchKey(queries),
         undefined,
